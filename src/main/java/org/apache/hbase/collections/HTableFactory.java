@@ -16,6 +16,7 @@
  */
 package org.apache.hbase.collections;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.client.HTablePool;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -23,7 +24,7 @@ import org.apache.hadoop.hbase.util.Bytes;
 @SuppressWarnings("deprecation")
 public abstract class HTableFactory {
 
-  private static HTablePool _pool = new HTablePool();
+  private static HTablePool _pool;
 
   public HTableInterface getInstance(String table) {
     return getInstance(Bytes.toBytes(table));
@@ -31,9 +32,11 @@ public abstract class HTableFactory {
 
   public abstract HTableInterface getInstance(byte[] table);
 
-  public static HTableFactory instance() {
+  public synchronized static HTableFactory instance(Configuration configuration) {
+    if (_pool == null) {
+      _pool = new HTablePool(configuration, Integer.MAX_VALUE);
+    }
     return new HTableFactory() {
-
       @Override
       public HTableInterface getInstance(byte[] table) {
         return _pool.getTable(table);

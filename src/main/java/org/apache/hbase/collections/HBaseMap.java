@@ -9,6 +9,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Get;
@@ -27,7 +29,7 @@ public class HBaseMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K
   private static final byte[] DEFAULT_SIZE = HConstants.EMPTY_BYTE_ARRAY;
   private static final byte[] DEFAULT_QUAL = HConstants.EMPTY_BYTE_ARRAY;
 
-  private HTableFactory _tableFactory = HTableFactory.instance();
+  private final HTableFactory _tableFactory;
   private SerializerFactory<K, V> _serializerFactory = new SerializerFactory<K, V>();
   private byte[] _table;
   private byte[] _family;
@@ -43,16 +45,30 @@ public class HBaseMap<K, V> extends AbstractMap<K, V> implements ConcurrentMap<K
     this(Bytes.toBytes(table), Bytes.toBytes(mapName));
   }
 
+  public HBaseMap(Configuration configuration, String table, String mapName) {
+    this(configuration, Bytes.toBytes(table), Bytes.toBytes(mapName));
+  }
+
   public HBaseMap(byte[] table, byte[] mapName) {
     this(table, DEFAULT_FAMILY, mapName, DEFAULT_QUAL, DEFAULT_SIZE);
   }
 
+  public HBaseMap(Configuration configuration, byte[] table, byte[] mapName) {
+    this(configuration, table, DEFAULT_FAMILY, mapName, DEFAULT_QUAL, DEFAULT_SIZE);
+  }
+
   public HBaseMap(byte[] table, byte[] family, byte[] mapName, byte[] defaultQualifier, byte[] sizeQualifier) {
+    this(HBaseConfiguration.create(), table, family, mapName, defaultQualifier, sizeQualifier);
+  }
+
+  public HBaseMap(Configuration configuration, byte[] table, byte[] family, byte[] mapName, byte[] defaultQualifier,
+      byte[] sizeQualifier) {
     _table = table;
     _family = family;
     _mapName = mapName;
     _defaultQualifier = defaultQualifier;
     _sizeQualifier = sizeQualifier;
+    _tableFactory = HTableFactory.instance(configuration);
   }
 
   @Override
